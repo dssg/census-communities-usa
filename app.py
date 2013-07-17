@@ -1,4 +1,6 @@
 from flask import Flask
+import simplejson as json
+
 app = Flask(__name__)
 
 @app.route("/")
