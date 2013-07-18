@@ -23,7 +23,7 @@ def get_year(year):
 
 @app.route("/get-all/<year>/<state>")
 def get_year_and_state(year,state):
-	return os.environ.get('MONGOHQ_URL')
+	return str(os.environ.get('MONGOHQ_URL'))
 
 @app.route("/residence-block/<int:block>")
 def find_block(block):
