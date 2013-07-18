@@ -17,4 +17,6 @@ The requests avalible are `/year/year_num`,`/state/state_abbv` & `/get-all/year/
 
 The base unit of reuturn datepoint, and each query will return a list of datapoints..
 
-An example data pount can be found in… [TODO]
+An example data point can be found in… [TODO]
+
+Each datapoint represents a census block. 

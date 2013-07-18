@@ -10,6 +10,9 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 
+#BAD MONGO URL
+#NEVER DO THIS
+MONGO_URL = os.environ.get('MONGOHQ_URL')
 
 @app.route("/state/<state>")
 def get_state(state):
@@ -27,10 +30,13 @@ def get_year(year):
 def get_year_and_state(year,state):
 	return "you wanted both"
 
+@app.route("/block/<int:block>")
+def find_block(block):
+	return "block route"
+
 @app.route("/")
 def hello():
     return "Hello World, again"
 
 if __name__ == "__main__":
-	MONGO_URL = os.environ.get('MONGOHQ_URL')
 	app.run(debug=True)
