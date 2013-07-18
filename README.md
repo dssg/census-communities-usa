@@ -7,7 +7,7 @@ This the repo for the API that exposes [LODES](http://lehd.did.census.gov/onthem
 
 The JSON API is served via a flask app. A copy is currently living on [heroku](http://enigmatic-fjord-3697.herokuapp.com/). The database is [MongoDB](http://mongodb.com/).
 
-The requests avalible are `/year`,`/state` & `/year/state`
+The requests avalible are `/year/year_num`,`/state/state_abbv` & `/get-all/year/state`
 
 `/state` returns a json list of all the records for a given state. The form of request is `/CA`,`/IL`, etc.
 
