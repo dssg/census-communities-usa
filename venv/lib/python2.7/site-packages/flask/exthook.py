@@ -21,7 +21,6 @@
 """
 import sys
 import os
-from ._compat import reraise
 
 
 class ExtensionImporter(object):
@@ -78,7 +77,7 @@ class ExtensionImporter(object):
                 # we swallow it and try the next choice.  The skipped frame
                 # is the one from __import__ above which we don't care about
                 if self.is_important_traceback(realname, tb):
-                    reraise(exc_type, exc_value, tb.tb_next)
+                    raise exc_type, exc_value, tb.tb_next
                 continue
             module = sys.modules[fullname] = sys.modules[realname]
             if '.' not in modname:
@@ -111,7 +110,7 @@ class ExtensionImporter(object):
         if module_name == important_module:
             return True
 
-        # Some python versions will will clean up modules so early that the
+        # Some python verisons will will clean up modules so early that the
         # module name at that point is no longer set.  Try guessing from
         # the filename then.
         filename = os.path.abspath(tb.tb_frame.f_code.co_filename)

@@ -9,7 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 from .globals import request
-from ._compat import with_metaclass
 
 
 http_method_funcs = frozenset(['get', 'post', 'head', 'options',
@@ -120,7 +119,7 @@ class MethodViewType(type):
         return rv
 
 
-class MethodView(with_metaclass(MethodViewType, View)):
+class MethodView(View):
     """Like a regular class-based view but that dispatches requests to
     particular methods.  For instance if you implement a method called
     :meth:`get` it means you will response to ``'GET'`` requests and
@@ -139,6 +138,8 @@ class MethodView(with_metaclass(MethodViewType, View)):
 
         app.add_url_rule('/counter', view_func=CounterAPI.as_view('counter'))
     """
+    __metaclass__ = MethodViewType
+
     def dispatch_request(self, *args, **kwargs):
         meth = getattr(self, request.method.lower(), None)
         # if the request method is HEAD and we don't have a handler for it
