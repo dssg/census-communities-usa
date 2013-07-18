@@ -1,10 +1,12 @@
 import pymongo
+<<<<<<< HEAD
+from urlparse import urlparse
+
 import os
 import datetime
 import simplejson as json
 import sys
 from urlparse import urlparse
-
 
 def t_or_f(val):
     if int(val) == 1:
@@ -19,8 +21,9 @@ MONGO_URL = os.environ.get('MONGOHQ_URL')
 if MONGO_URL:
     print "First if statement"
     # Get a connection
+    print "Tester"
     conn = pymongo.Connection(MONGO_URL)
-    
+    print "print con"
     # Get the database
     db = conn[urlparse(MONGO_URL).path[1:]]
     states = db.census
