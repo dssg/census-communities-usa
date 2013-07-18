@@ -12,15 +12,10 @@ app = Flask(__name__)
 
 #BAD MONGO URL
 #NEVER DO THIS
-MONGO_URL = os.environ.get('MONGOHQ_URL')
 
 @app.route("/state/<state>")
 def get_state(state):
-	if MONGO_URL:
-		conn = pymongo.Connection(MONGO_URL)
-    	db = conn[urlparse(MONGO_URL).path[1:]]
-    	census = db.census
-    	return dumps(census.find_one())
+	return placeholder
 
 @app.route("/year/<year>")
 def get_year(year):
@@ -28,11 +23,11 @@ def get_year(year):
 
 @app.route("/get-all/<year>/<state>")
 def get_year_and_state(year,state):
-	return "you wanted both"
+	return os.environ.get('MONGOHQ_URL')
 
-@app.route("/block/<int:block>")
+@app.route("/residence-block/<int:block>")
 def find_block(block):
-	return "block route"
+	return "test"
 
 @app.route("/")
 def hello():
