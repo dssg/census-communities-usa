@@ -2,6 +2,7 @@ from pymongo import *
 import os
 import datetime
 import simplejson as json
+import sys
 
 MONGO_URL = os.environ.get('MONGOHQ_URL')
 
@@ -36,3 +37,10 @@ def weird_csv_to_dict(file):
 			line_dict[SI03] = line[11]
 			line_dict[createdate] = datetime.date(int(line[12][0:4]),int(line[12][4:6]),int(line[12][6:8]))
 			state_id = states.insert(line_dict)
+
+def main():
+    input = sys.argv[1]
+    weird_csv_to_dict(input)
+
+if __name__ == '__main__':
+    main()
