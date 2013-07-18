@@ -10,9 +10,7 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 
-#BAD MONGO URL
-#NEVER DO THIS
-MONGO_URL = 'mongodb://heroku:29e9df65f428be35535a2f6786508275@shannon.mongohq.com:10038/app16981083'
+
 @app.route("/state/<state>")
 def get_state(state):
 	if MONGO_URL:
@@ -34,4 +32,5 @@ def hello():
     return "Hello World, again"
 
 if __name__ == "__main__":
+	MONGO_URL = os.environ.get('MONGOHQ_URL')
 	app.run(debug=True)
