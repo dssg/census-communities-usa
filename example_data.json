@@ -1,0 +1,16 @@
+{
+	"_id" : ObjectId("51e95490b2217b11831aeec8"),
+	"Jobs_1251_To_3333" : "0",
+	"Jobs_Age_>=_55" : "1",
+	"Jobs_Age_<=_29" : "0",
+	"Jobs_Trade_Transportation_Utilities" : "0",
+	"Workplace_Census_Block_Code" : "010010201001000",
+	"Jobs_More_Than_3333" : "0",
+	"Jobs_Age_30_To_54" : "0",
+	"Residence_Census_Block_Code" : "010010202002000",
+	"Jobs_Other" : "0",
+	"Jobs_Goods" : "1",
+	"Date" : ISODate("2013-05-30T00:00:00Z"),
+	"Jobs_1250_Or_Less" : "1",
+	"Total_Jobs" : "1"
+}
