@@ -3,46 +3,46 @@ mongodb:
     :columns:
     - id:
       :source: _id
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_1251_To_3333:
       :source: Jobs_1251_To_3333
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Age_55:
       :source: Jobs_Age_>=_55
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Age_29:
       :source: Jobs_Age_<=_29
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Trade_Transportation_Utilities:
       :source: Jobs_Trade_Transportation_Utilities
-      :type: int
+      :type: DOUBLE PRECISION
     - Workplace_Census_Block_Code:
       :source: Workplace_Census_Block_Code
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_More_Than_3333:
       :source: Jobs_More_Than_3333
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Age_30_To_54:
       :source: Jobs_Age_30_To_54
-      :type: int
+      :type: DOUBLE PRECISION
     - Residence_Census_Block_Code:
       :source: Residence_Census_Block_Code
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Other:
       :source: Jobs_Other
-      :type: int
+      :type: DOUBLE PRECISION
     - Jobs_Goods:
       :source: Jobs_Goods
-      :type: int
+      :type: DOUBLE PRECISION
     - Date:
       :source: Date
-      :type: timestamp
+      :type: TIMESTAMP
     - Jobs_1250_Or_Less:
       :source: Jobs_1250_Or_Less
-      :type: int
+      :type: DOUBLE PRECISION
     - Total_Jobs:
       :source: Total_Jobs
-      :type: int
+      :type: DOUBLE PRECISION
   :meta:
     :table: loads_data
 

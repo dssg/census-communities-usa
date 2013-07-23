@@ -1,0 +1,17 @@
+mongodb:
+  blog_posts:
+    :columns:
+    - id:
+      :source: _id
+      :type: TEXT
+    - author_name:
+      :source: author.name
+      :type: TEXT
+    - author_bio:
+      :source: author.bio
+      :type: TEXT
+    - title: TEXT
+    - created: DOUBLE PRECISION
+    :meta:
+      :table: blog_posts
+      :extra_props: true
