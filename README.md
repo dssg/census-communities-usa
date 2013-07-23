@@ -13,4 +13,4 @@ The scrapers are live in `/scrapers`.
 
 Each datapoint represents a census block. 
 
-We would like to build an API that allows you to 
+We would like to build an API that allows you to query the census data without having to download entire CSVs. 
