@@ -5,18 +5,12 @@ Mapping and analyzing local business data from the Census Bureau
 
 This the repo for the API that exposes [LODES](http://lehd.did.census.gov/onthemap/LODES7/LODESTechDoc7.0.pdf) via a JSON api.
 
-The JSON API is served via a flask app. A copy is currently living on [heroku](http://enigmatic-fjord-3697.herokuapp.com/). The database is [MongoDB](http://mongodb.com/).
+The JSON API is served via a flask app. A copy is currently living on [heroku](http://enigmatic-fjord-3697.herokuapp.com/). The database is [MongoDB](http://mongodb.com/). The API and its contents live in `/web`.
 
-The requests avalible are `/year/year_num`,`/state/state_abbv` & `/get-all/year/state`
+You can see an example of each item in the collection in `/data_notes/example_data.json`. The data notes folder contains info on the dataset. 
 
-`/state` returns a json list of all the records for a given state. The form of request is `/CA`,`/IL`, etc.
-
-`/year` takes a numerical year 2002 to 2011 and returns a json list for all the records in the year. 
-
-`/year/state` returns the records for a given state and given year. 
-
-The base unit of reuturn datepoint, and each query will return a list of datapoints..
-
-An example data point can be found in… [TODO]
+The scrapers are live in `/scrapers`. 
 
 Each datapoint represents a census block. 
+
+We would like to build an API that allows you to 
