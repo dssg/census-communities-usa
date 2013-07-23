@@ -1,0 +1,48 @@
+mongodb:
+  census:
+    :columns:
+    - id:
+    	:source: _id
+    	:type: int
+   	- Jobs_1251_To_3333
+   		:source: Jobs_1251_To_3333
+   		:type: int
+   	- Jobs_Age_>=_55
+   		:source: Jobs_Age_>=_55
+   		:type: int
+   	- Jobs_Age_<=_29
+   		:source: Jobs_Age_<=_29
+   		:type: int
+   	- Jobs_Trade_Transportation_Utilities
+   		:source: Jobs_Trade_Transportation_Utilities
+   		:type: int
+   	- Workplace_Census_Block_Code
+   		:source: Workplace_Census_Block_Code
+   		:type: int
+   	- Jobs_More_Than_3333
+   		:source: Jobs_More_Than_3333
+   		:type: int
+   	- Jobs_Age_30_To_54
+   		:source: Jobs_Age_30_To_54
+   		:type: int
+   	- Residence_Census_Block_Code
+   		:source: Residence_Census_Block_Code
+   		:type: int
+	- Jobs_Other
+		:source: Jobs_Other
+		:type: int
+	- Jobs_Goods
+		:source: Jobs_Goods
+		:type: int
+	- Date
+		:source: Date
+		:type: timestamp
+	- Jobs_1250_Or_Less
+		:source: Jobs_1250_Or_Less
+		:type: int
+	- Total_Jobs
+		:source: Total_Jobs
+		:type: int
+	:meta:
+		:table: loads_data
+
