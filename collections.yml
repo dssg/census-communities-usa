@@ -43,4 +43,6 @@ mongodb:
 	- Total_Jobs
 		:source: Total_Jobs
 		:type: int
+	:meta:
+		:table: loads_data
 
