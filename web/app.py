@@ -10,8 +10,6 @@ from bson.json_util import dumps
 
 app = Flask(__name__)
 
-
-
 @app.route("/state/<state>")
 def get_state(state):
 	return "Not Yet Implemented"
