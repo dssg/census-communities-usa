@@ -1,7 +1,9 @@
 import requests
+import shapefile
 import os
 import pymongo
 import gzip
+import zipfile
 import csv
 from datetime import datetime
 from cStringIO import StringIO
@@ -46,6 +48,35 @@ def fetch_load_xwalk(state):
             coll.insert([r for r in group if r])
         coll.ensure_index([('stusps', pymongo.DESCENDING)])
 
+def fetch_load_shapes(state):
+    coll = MONGO_DB['geo_xwalk']
+    st_fips = coll.find_one({'stusps': state.upper()})['st']
+    u = 'http://www2.census.gov/geo/tiger/TIGER2010/TABBLOCK/2010'
+    url = '%s/tl_2010_%s_tabblock10.zip' % (u, st_fips)
+    req = requests.get(url)
+    if req.status_code != 200:
+        print 'Unable to fetch census block shape data for %s' % state.upper()
+    else:
+        zf = StringIO(req.content)
+        shp = StringIO()
+        dbf = StringIO()
+        shx = StringIO()
+        with zipfile.ZipFile(zf) as f:
+            for name in f.namelist():
+                if name.endswith('.shp'):
+                    shp.write(f.read(name))
+                if name.endswith('.shx'):
+                    shx.write(f.read(name))
+                if name.endswith('.dbf'):
+                    dbf.write(f.read(name))
+        shape_reader = shapefile.Reader(shp=shp, dbf=dbf, shx=shx)
+        records = shape_reader.shapeRecords()
+        for record in records:
+            geoid = record.record[4]
+            geo_xwalk = coll.find_one({'tabblk2010': geoid})['_id']
+            coll.update({'_id': geo_xwalk}, {'$set': {'geojson': record.shape.__geo_interface__}})
+        coll.ensure_index([('geojson', pymongo.GEOSPHERE)])
+
 def fetch_load(year, state):
     for group in ['od', 'rac', 'wac']:
         coll = MONGO_DB[COLLS[group]]
@@ -78,6 +109,8 @@ if __name__ == "__main__":
     for state in states:
         print 'Loading geographic crosswalk table for %s' % state.upper()
         fetch_load_xwalk(state)
+        print 'Loading geometries for %s' % state.upper()
+        fetch_load_shapes(state)
         for year in range(2002, 2012):
             print 'Loading data from %s for %s' % (year, state.upper())
             fetch_load(year, state)
