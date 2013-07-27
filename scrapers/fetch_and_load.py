@@ -5,6 +5,7 @@ import gzip
 import csv
 from datetime import datetime
 from cStringIO import StringIO
+from itertools import izip_longest
 ENDPOINT = 'http://lehd.ces.census.gov/onthemap/LODES7'
 MONGO_HOST = os.environ.get('MONGO_HOST')
 if not MONGO_HOST:
@@ -24,6 +25,10 @@ COLLS = {
     'wac': 'work_area',
 }
 
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return izip_longest(*args, fillvalue=fillvalue)
+
 def fetch_load_xwalk(state):
     """ 
     Only use this the first time or drop the 'geo_xwalk'
@@ -36,8 +41,9 @@ def fetch_load_xwalk(state):
     s = StringIO(xwalk.content)
     coll = MONGO_DB['geo_xwalk']
     with gzip.GzipFile(fileobj=s) as f:
-        reader = csv.DictReader(f)
-        coll.insert([r for r in reader])
+        row_groups = grouper(csv.DictReader(f), 10000)
+        for group in row_groups:
+            coll.insert([r for r in group if r])
         coll.ensure_index([('stusps', pymongo.DESCENDING)])
 
 def fetch_load(year, state):
@@ -48,22 +54,30 @@ def fetch_load(year, state):
                 u = '%s/%s/%s/%s_%s_%s_%s_%s.csv.gz' % (ENDPOINT, state, group, state, group, segment, job_type, year)
                 req = requests.get(u)
                 if req.status_code != 200:
-                    print 'No %s data for %s in the year %s' % (group, state, year)
+                    print 'No %s data for %s in the year %s of type %s' % (group, state, year, job_type)
                     continue
                 s = StringIO(req.content)
                 with gzip.GzipFile(fileobj=s) as f:
-                    reader = csv.DictReader(f)
-                    rows = []
-                    for row in reader:
-                        row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
-                        row['stusps'] = state.upper()
-                        rows.append(row)
-                    coll.insert(rows)
+                    row_groups = grouper(csv.DictReader(f), 10000)
+                    for gr in row_groups:
+                        rows = []
+                        for row in gr:
+                            if row:
+                                row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
+                                row['stusps'] = state.upper()
+                                rows.append(row)
+                        coll.insert(rows)
 
 if __name__ == "__main__":
-    states_file = open('scrapers/50state.txt', 'rb')
-    states = [s[:2].lower() for s in states_file]
+    import sys
+    if len(sys.argv) == 2:
+        states = [sys.argv[1]]
+    else:
+        states_file = open('50state.txt', 'rb')
+        states = [s[:2].lower() for s in states_file]
     for state in states:
+        print 'Loading geographic crosswalk table for %s' % state.upper()
         fetch_load_xwalk(state)
         for year in range(2002, 2012):
+            print 'Loading data from %s for %s' % (year, state.upper())
             fetch_load(year, state)
