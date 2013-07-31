@@ -2,7 +2,7 @@ import requests
 import os
 import pymongo
 import gzip
-import csv
+import unicodecsv as csv
 from datetime import datetime
 from cStringIO import StringIO
 from itertools import izip_longest
