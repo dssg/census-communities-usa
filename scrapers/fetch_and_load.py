@@ -2,7 +2,7 @@ import requests
 import os
 import pymongo
 import gzip
-import csv
+import unicodecsv as csv
 from datetime import datetime
 from cStringIO import StringIO
 from itertools import izip_longest
@@ -41,7 +41,7 @@ def fetch_load_xwalk(state):
     s = StringIO(xwalk.content)
     coll = MONGO_DB['geo_xwalk']
     with gzip.GzipFile(fileobj=s) as f:
-        row_groups = grouper(csv.DictReader(f), 10000)
+        row_groups = grouper(csv.DictReader(f, encoding="latin-1"), 10000)
         for group in row_groups:
             coll.insert([r for r in group if r])
         coll.ensure_index([('stusps', pymongo.DESCENDING)])
