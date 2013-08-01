@@ -5,7 +5,7 @@ AR
 AZ
 CO
 
-Then loading the geographic crosswalk table for AZ, I got an encoding error.
+When loading the geographic crosswalk table for AZ, I got an encoding error.
 I was able to fix it by explicitly declaring the encoding for the incoming
 CSV as latin-1.
 
