@@ -6,6 +6,7 @@ AZ
 CO
 DE
 CT
+GA
 
 When loading the geographic crosswalk table for AZ, I got an encoding error.
 I was able to fix it by explicitly declaring the encoding for the incoming
@@ -13,3 +14,7 @@ CSV as latin-1.
 
 When I was loading origin destination data for CA, it failed when loading 2005:
 EOFError: Compressed file ended before the end-of-stream marker was reached
+
+When I was loading RAC data for 2007 for Florida, also got the above error
+
+
