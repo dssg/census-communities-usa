@@ -17,4 +17,4 @@ EOFError: Compressed file ended before the end-of-stream marker was reached
 
 When I was loading RAC data for 2007 for Florida, also got the above error
 
-
+ID was unable to download data for 2010
