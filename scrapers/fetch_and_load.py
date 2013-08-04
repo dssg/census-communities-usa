@@ -48,7 +48,7 @@ def fetch_load_xwalk(state):
         coll.ensure_index([('stusps', pymongo.DESCENDING)])
         coll.ensure_index([('cty', pymongo.DESCENDING)])
 
-def fetch_load(year, state, attempts=0, **kwargs):
+def fetch_load(year, state, **kwargs):
     groups = ['od', 'rac', 'wac']
     job_types = ['JT00', 'JT01', 'JT02', 'JT03', 'JT04', 'JT05']
     if kwargs.get('groups') and 'all' not in kwargs.get('group'):
@@ -81,6 +81,7 @@ def fetch_load(year, state, attempts=0, **kwargs):
                             if row:
                                 row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
                                 row['main_state'] = state.upper()
+                                row['data_year'] = year
                                 if row.get('h_geocode'):
                                     home_geo_xwalk = MONGO_DB['geo_xwalk'].find_one({'tabblk2010': row['h_geocode']})
                                     row['home_state_abrv'] = home_geo_xwalk['stusps']
