@@ -47,6 +47,20 @@ def fetch_load_xwalk(state):
             coll.insert([r for r in group if r])
         coll.ensure_index([('stusps', pymongo.DESCENDING)])
         coll.ensure_index([('cty', pymongo.DESCENDING)])
+        coll.ensure_index([('tabblk2010', pymongo.DESCENDING)])
+
+def make_indexes(group, coll, row):
+    if group == 'od':
+        home_work_fields = [f[5:] for f in row.keys() if f.startswith('home') or f.startswith('work')]
+        for field in home_work_fields:
+            coll.ensure_index([
+              ('home_%s' % field, pymongo.DESCENDING),
+              ('work_%s' % field, pymongo.DESCENDING)
+            ])
+    else:
+        for field in row.keys():
+            if not field.startswith('home') and not field.startswith('work'):
+                coll.ensure_index([(field, pymongo.DESCENDING)])
 
 def fetch_load(year, state, **kwargs):
     groups = ['od', 'rac', 'wac']
@@ -122,20 +136,8 @@ def fetch_load(year, state, **kwargs):
                                     row['work_st_leg_lower_name'] = work_geo_xwalk['stsldlname']
                                     row['work_st_leg_upper_code'] = work_geo_xwalk['stsldu']
                                     row['work_st_leg_upper_name'] = work_geo_xwalk['stslduname']
-                                if group == 'od':
-                                    home_work_fields = [f[5:] for f in row.keys() if f.startswith('home') or f.startswith('work')]
-                                    for field in home_work_fields:
-                                        coll.ensure_index([
-                                          ('home_%s' % field, pymongo.DESCENDING),
-                                          ('work_%s' % field, pymongo.DESCENDING)
-                                        ])
-                                    for field in row.keys():
-                                        if not field.startswith('home') and not field.startswith('work'):
-                                            coll.ensure_index([(field, pymongo.DESCENDING)])
-                                else:
-                                    for field in row.keys():
-                                        coll.ensure_index([(field, pymongo.DESCENDING)])
                                 rows.append(row)
+                        make_indexes(group, coll, row)
                         coll.insert(rows)
                 print 'Successfully loaded %s' % u
 
