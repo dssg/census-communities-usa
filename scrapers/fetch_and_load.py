@@ -50,13 +50,13 @@ def fetch_load_xwalk(state):
 def fetch_load(year, state, attempts=0, **kwargs):
     groups = ['od', 'rac', 'wac']
     job_types = ['JT00', 'JT01', 'JT02', 'JT03', 'JT04', 'JT05']
-    if kwargs.get('groups') and if 'all' not in kwargs.get('group'):
+    if kwargs.get('groups') and 'all' not in kwargs.get('group'):
         groups = kwargs.get('groups')
-    if kwargs.get('job_types') and if 'all' not in kwargs.get('job_types'):
+    if kwargs.get('job_types') and 'all' not in kwargs.get('job_types'):
         job_types = kwargs.get('job_types')
     for group in groups:
         coll = MONGO_DB[COLLS[group]]
-        if not kwargs.get('segments') or if 'all' in kwargs.get('segments'):
+        if not kwargs.get('segments') or 'all' in kwargs.get('segments'):
             segments = SEGMENTS[group]
         else:
             segments = kwargs.get('segments')
@@ -121,7 +121,8 @@ if __name__ == "__main__":
     if 'all' in states:
         states = states_list
     if not set(states).issubset(set(states_list)):
-        return 'The list of states you provided included an invalid value: %s' % args.states
+        print 'The list of states you provided included an invalid value: %s' % args.states
+        sys.exit()
     years = args.years.split(',')
     if 'all' in years:
         years = range(2002, 2012)
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     }
     for state in states:
         print 'Loading geographic crosswalk table for %s' % state.upper()
-        fetch_load_xwalk(state)
+        fetch_load_xwalk(state.lower())
         for year in years:
             print 'Loading data from %s for %s' % (year, state.upper())
-            fetch_load(year, state)
+            fetch_load(year, state.lower())
