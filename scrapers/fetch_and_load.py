@@ -137,7 +137,8 @@ def fetch_load(year, state, **kwargs):
                                     row['work_st_leg_upper_code'] = work_geo_xwalk['stsldu']
                                     row['work_st_leg_upper_name'] = work_geo_xwalk['stslduname']
                                 rows.append(row)
-                        make_indexes(group, coll, row)
+                        if row:
+                            make_indexes(group, coll, row)
                         coll.insert(rows)
                 print 'Successfully loaded %s' % u
 
