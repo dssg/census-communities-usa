@@ -98,7 +98,7 @@ def fetch_load(year, state, **kwargs):
                 except ConnectionError:
                     return 'Was unable to load %s' % u
                 if req.status_code != 200:
-                    print 'No %s data for segment %s in %s in the year %s of type %s' % (group, segmenet, state, year, job_type)
+                    print 'No %s data for segment %s in %s in the year %s of type %s' % (group, segment, state, year, job_type)
                     continue
                 s = StringIO(req.content)
                 with gzip.GzipFile(fileobj=s) as f:
