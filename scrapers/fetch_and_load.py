@@ -2,6 +2,7 @@ import requests
 from requests.exceptions import ConnectionError
 import os
 import pymongo
+from pymongo.read_preferences import ReadPreference
 import gzip
 import unicodecsv as csv
 from datetime import datetime
@@ -11,8 +12,11 @@ ENDPOINT = 'http://lehd.ces.census.gov/onthemap/LODES7'
 MONGO_HOST = os.environ.get('MONGO_HOST')
 if not MONGO_HOST:
     MONGO_HOST = 'localhost'
-MONGO_CONN = pymongo.MongoClient(MONGO_HOST)
-MONGO_DB = MONGO_CONN['census']
+WRITE_CONN = pymongo.MongoClient(MONGO_HOST)
+WRITE_DB = WRITE_CONN['census']
+
+READ_DB = pymongo.MongoReplicaSetClient('%s:27017' % MONGO_HOST, replicaSet='rs0').census
+READ_DB.read_preference = ReadPreference.SECONDARY_PREFERRED
 
 SEGMENTS = {
     'od': ['main', 'aux'],
@@ -24,6 +28,15 @@ COLLS = {
     'od': 'origin_destination',
     'rac': 'residence_area',
     'wac': 'work_area',
+}
+
+JOB_TYPES = {
+    'JT00': 'all',
+    'JT01': 'primary',
+    'JT02': 'private',
+    'JT03': 'private primary',
+    'JT04': 'federal',
+    'JT05': 'federal primary',
 }
 
 def grouper(iterable, n, fillvalue=None):
@@ -40,7 +53,7 @@ def fetch_load_xwalk(state):
         print 'Could not find Geographic crosswalk table for %s' % state
         return None
     s = StringIO(xwalk.content)
-    coll = MONGO_DB['geo_xwalk']
+    coll = WRITE_DB['geo_xwalk']
     with gzip.GzipFile(fileobj=s) as f:
         row_groups = grouper(csv.DictReader(f, encoding="latin-1"), 10000)
         for group in row_groups:
@@ -53,24 +66,25 @@ def make_indexes(group, coll, row):
     if group == 'od':
         home_work_fields = [f[5:] for f in row.keys() if f.startswith('home') or f.startswith('work')]
         for field in home_work_fields:
-            coll.ensure_index([
-              ('home_%s' % field, pymongo.DESCENDING),
-              ('work_%s' % field, pymongo.DESCENDING)
-            ])
+            if 'code' in field:
+                coll.ensure_index([
+                  ('home_%s' % field, pymongo.DESCENDING),
+                  ('work_%s' % field, pymongo.DESCENDING)
+                ])
     else:
         for field in row.keys():
-            if not field.startswith('home') and not field.startswith('work'):
+            if not field.startswith('home') and not field.startswith('work') and 'code' in field:
                 coll.ensure_index([(field, pymongo.DESCENDING)])
 
 def fetch_load(year, state, **kwargs):
     groups = ['od', 'rac', 'wac']
-    job_types = ['JT00', 'JT01', 'JT02', 'JT03', 'JT04', 'JT05']
+    job_types = JOB_TYPES.keys()
     if kwargs.get('groups') and 'all' not in kwargs.get('group'):
         groups = kwargs.get('groups')
     if kwargs.get('job_types') and 'all' not in kwargs.get('job_types'):
         job_types = kwargs.get('job_types')
     for group in groups:
-        coll = MONGO_DB[COLLS[group]]
+        coll = WRITE_DB[COLLS[group]]
         if not kwargs.get('segments') or 'all' in kwargs.get('segments'):
             segments = SEGMENTS[group]
         else:
@@ -88,7 +102,7 @@ def fetch_load(year, state, **kwargs):
                     continue
                 s = StringIO(req.content)
                 with gzip.GzipFile(fileobj=s) as f:
-                    row_groups = grouper(csv.DictReader(f), 10000)
+                    row_groups = grouper(csv.DictReader(f), 20000)
                     for gr in row_groups:
                         rows = []
                         for row in gr:
@@ -96,8 +110,9 @@ def fetch_load(year, state, **kwargs):
                                 row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
                                 row['main_state'] = state.upper()
                                 row['data_year'] = year
+                                row['job_type'] = JOB_TYPES[job_type]
                                 if row.get('h_geocode'):
-                                    home_geo_xwalk = MONGO_DB['geo_xwalk'].find_one({'tabblk2010': row['h_geocode']})
+                                    home_geo_xwalk = READ_DB['geo_xwalk'].find_one({'tabblk2010': row['h_geocode']})
                                     row['home_state_abrv'] = home_geo_xwalk['stusps']
                                     row['home_state_name'] = home_geo_xwalk['stname']
                                     row['home_county_fips'] = home_geo_xwalk['cty']
@@ -117,7 +132,7 @@ def fetch_load(year, state, **kwargs):
                                     row['home_st_leg_upper_code'] = home_geo_xwalk['stsldu']
                                     row['home_st_leg_upper_name'] = home_geo_xwalk['stslduname']
                                 if row.get('w_geocode'):
-                                    work_geo_xwalk = MONGO_DB['geo_xwalk'].find_one({'tabblk2010': row['w_geocode']})
+                                    work_geo_xwalk = READ_DB['geo_xwalk'].find_one({'tabblk2010': row['w_geocode']})
                                     row['work_state_abrv'] = work_geo_xwalk['stusps']
                                     row['work_state_name'] = work_geo_xwalk['stname']
                                     row['work_county_fips'] = work_geo_xwalk['cty']
@@ -137,8 +152,8 @@ def fetch_load(year, state, **kwargs):
                                     row['work_st_leg_upper_code'] = work_geo_xwalk['stsldu']
                                     row['work_st_leg_upper_name'] = work_geo_xwalk['stslduname']
                                 rows.append(row)
-                        if row:
-                            make_indexes(group, coll, row)
+                        # if row:
+                        #     make_indexes(group, coll, row)
                         coll.insert(rows)
                 print 'Successfully loaded %s' % u
 
