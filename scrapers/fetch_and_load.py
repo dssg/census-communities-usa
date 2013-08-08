@@ -77,18 +77,17 @@ def make_indexes(group, coll, row):
                 coll.ensure_index([(field, pymongo.DESCENDING)])
 
 def fetch_load(year, state, **kwargs):
-    groups = ['od', 'rac', 'wac']
-    job_types = JOB_TYPES.keys()
-    if kwargs.get('groups') and 'all' not in kwargs.get('group'):
-        groups = kwargs.get('groups')
-    if kwargs.get('job_types') and 'all' not in kwargs.get('job_types'):
-        job_types = kwargs.get('job_types')
+    groups = kwargs.get('groups')
+    if 'all' in groups:
+        groups = ['od', 'rac', 'wac']
+    job_types = kwargs.get('job_types')
+    if 'all' in job_types:
+        job_types = JOB_TYPES.keys()
     for group in groups:
         coll = WRITE_DB[COLLS[group]]
-        if not kwargs.get('segments') or 'all' in kwargs.get('segments'):
+        segments = kwargs.get('segments')
+        if 'all' in segments:
             segments = SEGMENTS[group]
-        else:
-            segments = kwargs.get('segments')
         for segment in segments:
             for job_type in job_types:
                 state = state.lower()
@@ -154,7 +153,7 @@ def fetch_load(year, state, **kwargs):
                                 rows.append(row)
                         # if row:
                         #     make_indexes(group, coll, row)
-                        coll.insert(rows)
+                        coll.insert(rows, w=0)
                 print 'Successfully loaded %s' % u
 
 if __name__ == "__main__":
@@ -216,4 +215,4 @@ if __name__ == "__main__":
             print 'Skipping geographic crosswalk table for %s' % state.upper()
         for year in years:
             print 'Loading data from %s for %s' % (year, state.upper())
-            fetch_load(year, state.lower())
+            fetch_load(year, state.lower(), **kwargs)
