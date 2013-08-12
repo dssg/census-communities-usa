@@ -1,9 +1,11 @@
 AL
+AK
 AZ
 AR
 CA
 CO
 CT
+DC
 DE
 FL
 GA
@@ -47,3 +49,4 @@ WA
 WV
 WI
 WY
+PR
