@@ -44,6 +44,8 @@ exports.findByState = function(req, res) {
 	var state = req.params.state;
 	console.log('State: ' + state);
 	db.collection(db_collection, function(err, collection) {
-		collection.find({})
-	})
-}
+		collection.find({"origin_state":state}, function(err, item) {
+			res.send(item);
+		});
+	});
+};

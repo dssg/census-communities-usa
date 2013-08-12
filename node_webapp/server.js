@@ -1,10 +1,11 @@
 var express = require('express'),
-    wines = require('./routes/origin_destination');
+    od = require('./routes/origin_destination');
  
 var app = express();
  
-app.get('/wines', wines.findAll);
-app.get('/wines/:id', wines.findById);
+app.get('/od', od.findAll);
+app.get('/od/:id', od.findById);
+app.get('/od/:state',od.findByState)
  
 app.listen(3000);
 console.log('Listening on port 3000...');
