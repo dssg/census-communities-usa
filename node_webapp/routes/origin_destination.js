@@ -4,7 +4,7 @@ var Server = mongo.Server,
     Db = mongo.Db,
     BSON = mongo.BSONPure;
 
-var server = new Server('ec2-54-214-169-9.us-west-2.compute.amazonaws.com', 27017, {auto_reconnect: true});
+var server = new Server(process.env.MONGO_URL, 27017, {auto_reconnect: true});
 db = new Db('census', server);
 
 db_collection = 'origin_destination'
@@ -35,7 +35,7 @@ exports.findById = function(req, res) {
     console.log('id: ' + id);
     db.collection(db_collection, function(err, collection) {
         collection.findOne({'_id':new BSON.ObjectID(id)}, function(err, item) {
-            res.send(item);
+            res.send(items);
         });
     });
 };
@@ -45,7 +45,16 @@ exports.findByState = function(req, res) {
 	console.log('State: ' + state);
 	db.collection(db_collection, function(err, collection) {
 		collection.find({"origin_state":state}, function(err, item) {
+			res.send(items);
+		});
+	});
+};
+
+exports.findOne = function(req, res) {
+	db.collection(db_collection, function(err,collection) {
+		collection.findOne({}, function(err, collection) {
 			res.send(item);
 		});
 	});
 };
+
