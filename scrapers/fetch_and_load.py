@@ -73,7 +73,7 @@ def make_indexes(group, coll, row):
                 ])
     else:
         for field in row.keys():
-            if not field.startswith('home') and not field.startswith('work') and 'code' in field:
+            if field.startswith('home') or field.startswith('work') and 'code' in field:
                 coll.ensure_index([(field, pymongo.DESCENDING)])
 
 def fetch_load(year, state, **kwargs):
