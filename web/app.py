@@ -1,7 +1,7 @@
 from flask import Flask,jsonify
 import flask
-import simplejson as json
 import os
+import json
 import sys
 import pymongo
 from urlparse import urlparse
@@ -41,38 +41,25 @@ AREAS = [
     'cong_dist_code',
 ]
 
-@app.route("/<coll_name>/<geo_area>/<value>")
+@app.route("/<coll_name>/<geo_area>/<value>/")
 def query(coll_name, geo_area, value):
     if coll_name not in MONGO_COLLS.keys():
         return make_response('Not a valid collection name', 401)
     if geo_area not in AREAS:
         return make_response('Not a valid geospatial area', 401)
-    return "Not Yet Implemented"
-
-@app.route("/year/<year>")
-def get_year(year):
-    return "Not Yet Implemented"
-
-@app.route("/get-all/<year>/<state>")
-def get_year_and_state(year,state):
-    return "Not Yet Implemented"
-
-@app.route("/residence-block/<int:block>")
-def find_block(block):
-    block_records = []
-    collection = db.census
-    for record in collection.find({"Residence_Census_Block_Code":block}, limit=20):
-        block_records.append(record)
-    return dumps(block_records) 
-
-@app.route("/demo")
-def demo():
-    collection = db.census
-    return dumps(collection.fine_one())
-
-@app.route("/")
-def hello():
-    return "Hello World, again"
+    query = {}
+    values = value.split('_')
+    if coll_name == 'od':
+        query = {'home_%s' % geo_area: values[0],  'work_%s' % geo_area: values[1]}
+    elif coll_name == 'wac':
+        query = {'work_%s' % geo_area: values[0]}
+    elif coll_name == 'rac':
+        query = {'home_%s' % geo_area: values[0]}
+    coll = MONGO_DB[MONGO_COLLS[coll_name]]
+    records = json.dumps([r for r in coll.find(query, limit=50)])
+    resp = make_response(records)
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 if __name__ == "__main__":
     app.run(debug=True)
