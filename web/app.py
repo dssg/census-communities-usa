@@ -11,12 +11,42 @@ from bson.json_util import dumps
 app = Flask(__name__)
 
 MONGO_HOST = os.environ.get('MONGO_HOST')
-MONGO_CONN = pymongo.MongoClient(MONGO_HOST,27017)
+MONGO_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
 MONGO_DB = MONGO_CONN['census']
-MONGO_COLL = MONGO_DB['blocks']
 
-@app.route("/state/<state>")
-def get_state(state):
+MONGO_COLLS = {
+    'od': 'origin_destination',
+    'rac': 'residence_area',
+    'wac': 'work_area',
+}
+
+AREAS = [
+    'st_leg_upper_name',
+    'st_leg_lower_name',
+    'place_code',
+    'county_fips',
+    'census_tract_code',
+    'st_leg_upper_code',
+    'place_name',
+    'zcta_name',
+    'state_name',
+    'zcta_code',
+    'cong_dist_name',
+    'county_name',
+    'state_abrv',
+    'census_tract_name',
+    'st_leg_lower_code',
+    'census_block_code',
+    'census_block_name',
+    'cong_dist_code',
+]
+
+@app.route("/<coll_name>/<geo_area>/<value>")
+def query(coll_name, geo_area, value):
+    if coll_name not in MONGO_COLLS.keys():
+        return make_response('Not a valid collection name', 401)
+    if geo_area not in AREAS:
+        return make_response('Not a valid geospatial area', 401)
     return "Not Yet Implemented"
 
 @app.route("/year/<year>")
