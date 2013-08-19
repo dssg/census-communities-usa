@@ -1,4 +1,4 @@
-from flask import Flask,jsonify
+from flask import Flask, make_response, request
 import flask
 import os
 import json
@@ -6,7 +6,7 @@ import sys
 import pymongo
 from urlparse import urlparse
 from bson import Binary, Code
-from bson.json_util import dumps
+from bson import json_util
 
 app = Flask(__name__)
 
@@ -56,10 +56,11 @@ def query(coll_name, geo_area, value):
     elif coll_name == 'rac':
         query = {'home_%s' % geo_area: values[0]}
     coll = MONGO_DB[MONGO_COLLS[coll_name]]
-    records = json.dumps([r for r in coll.find(query, limit=50)])
+    limit = request.args.get('limit', 50)
+    records = json_util.dumps([r for r in coll.find(query, limit=int(limit))])
     resp = make_response(records)
     resp.headers['Content-Type'] = 'application/json'
     return resp
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=7777)
