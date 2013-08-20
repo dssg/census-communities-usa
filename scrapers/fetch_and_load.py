@@ -39,6 +39,19 @@ JOB_TYPES = {
     'JT05': 'federal primary',
 }
 
+AREA_SEGMENTS = {
+    'S000': 'all', 
+    'SA01': 'under 29',
+    'SA02': '30 to 54', 
+    'SA03': 'over 55',
+    'SE01': '$1250/month or less',
+    'SE02': '$1251-$3333/month',
+    'SE03': 'more than $3333/month',
+    'SI01': 'Goods Producing industry sectors',
+    'SI02': 'Trade, Transportation, and Utilities industry sectors',
+    'SI03': 'All Other Services industry sectors',
+}
+
 def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
@@ -107,6 +120,9 @@ def fetch_load(year, state, **kwargs):
                         for row in gr:
                             if row:
                                 row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
+                                if group !='od':
+                                    row['segment_code'] = segment
+                                    row['segment_name'] = AREA_SEGMENTS[segment]
                                 row['main_state'] = state.upper()
                                 row['data_year'] = year
                                 row['job_type'] = JOB_TYPES[job_type]

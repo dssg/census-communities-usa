@@ -50,7 +50,10 @@ def query(coll_name, geo_area, value):
     query = {}
     values = value.split('_')
     if coll_name == 'od':
-        query = {'home_%s' % geo_area: values[0],  'work_%s' % geo_area: values[1]}
+        if len(values) < 2:
+            return make_response('You need to supply two values separated by an underscore to query the OD table', 401)
+        else:
+            query = {'home_%s' % geo_area: values[0],  'work_%s' % geo_area: values[1]}
     elif coll_name == 'wac':
         query = {'work_%s' % geo_area: values[0]}
     elif coll_name == 'rac':
