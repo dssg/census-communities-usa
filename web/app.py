@@ -71,16 +71,16 @@ def query(coll_name, geo_area, value):
 def tract_average(tract_code):
     coll = MONGO_DB['residence_area']
     query = {'home_census_tract_code': tract_code}
-    results = [d for d in coll.find(query, limit=50)]
+    results = [d for d in coll.find(query)]
     results = sorted(results, key=itemgetter('data_year'))
     res = []
     for k, g in groupby(results, key=itemgetter('data_year')):
         v = {tract_code: {}}
-        for item in group:
-            v[tract_code]['SE01'] = sum([i['SE01'] for i in group]) * 1250
-            v[tract_code]['SE02'] = sum([i['SE02'] for i in group]) * 2083
-            v[tract_code]['SE03'] = sum([i['SE03'] for i in group]) * 3333
-            v[tract_code]['S000'] = sum([i['S000'] for i in group])
+        all_vals = list(g)
+        v[tract_code]['SE01'] = sum([int(i['CE01']) for i in all_vals if i['segment_code'] == 'SE01']) * 1250
+        v[tract_code]['SE02'] = sum([int(i['CE02']) for i in all_vals if i['segment_code'] == 'SE02']) * 2083
+        v[tract_code]['SE03'] = sum([int(i['CE03']) for i in all_vals if i['segment_code'] == 'SE03']) * 3333
+        v[tract_code]['S000'] = sum([int(i['C000']) for i in all_vals])
         res.append({k:v})
     resp = make_response(json_util.dumps(res))
     resp.headers['Content-Type'] = 'application/json'
