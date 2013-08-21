@@ -7,6 +7,8 @@ import pymongo
 from urlparse import urlparse
 from bson import Binary, Code
 from bson import json_util
+from operator import itemgetter
+from itertools import groupby
 
 app = Flask(__name__)
 
@@ -62,6 +64,25 @@ def query(coll_name, geo_area, value):
     limit = request.args.get('limit', 50)
     records = json_util.dumps([r for r in coll.find(query, limit=int(limit))])
     resp = make_response(records)
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+@app.route('/tract-average/<tract_code>/')
+def tract_average(tract_code):
+    coll = MONGO_DB['residence_area']
+    query = {'home_census_tract_code': tract_code}
+    results = [d for d in coll.find(query, limit=50)]
+    results = sorted(results, key=itemgetter('data_year'))
+    res = []
+    for k, g in groupby(results, key=itemgetter('data_year')):
+        v = {tract_code: {}}
+        for item in group:
+            v[tract_code]['SE01'] = sum([i['SE01'] for i in group]) * 1250
+            v[tract_code]['SE02'] = sum([i['SE02'] for i in group]) * 2083
+            v[tract_code]['SE03'] = sum([i['SE03'] for i in group]) * 3333
+            v[tract_code]['S000'] = sum([i['S000'] for i in group])
+        res.append({k:v})
+    resp = make_response(json_util.dumps(res))
     resp.headers['Content-Type'] = 'application/json'
     return resp
 
