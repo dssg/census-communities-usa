@@ -4,6 +4,7 @@ import os
 import json
 import sys
 import pymongo
+from pymongo.read_preferences import ReadPreference
 from urlparse import urlparse
 from bson import Binary, Code
 from bson import json_util
@@ -15,6 +16,7 @@ app = Flask(__name__)
 MONGO_HOST = os.environ.get('MONGO_HOST')
 MONGO_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
 MONGO_DB = MONGO_CONN['census']
+MONGO_DB.read_preference = ReadPreference.SECONDARY_PREFERRED
 
 MONGO_COLLS = {
     'od': 'origin_destination',
@@ -77,10 +79,11 @@ def tract_average(tract_code):
     for k, g in groupby(results, key=itemgetter('data_year')):
         v = {tract_code: {}}
         all_vals = list(g)
-        v[tract_code]['SE01'] = sum([int(i['CE01']) for i in all_vals if i['segment_code'] == 'SE01']) * 1250
-        v[tract_code]['SE02'] = sum([int(i['CE02']) for i in all_vals if i['segment_code'] == 'SE02']) * 2083
-        v[tract_code]['SE03'] = sum([int(i['CE03']) for i in all_vals if i['segment_code'] == 'SE03']) * 3333
-        v[tract_code]['S000'] = sum([int(i['C000']) for i in all_vals])
+        # Get Earnings summary for all job types (primary, etc) by year
+        v[tract_code]['SE01'] = sum([int(i['CE01']) for i in all_vals if i['segment_code'] == 'S000'])
+        v[tract_code]['SE02'] = sum([int(i['CE02']) for i in all_vals if i['segment_code'] == 'S000'])
+        v[tract_code]['SE03'] = sum([int(i['CE03']) for i in all_vals if i['segment_code'] == 'S000'])
+        v[tract_code]['S000'] = sum([int(i['C000']) for i in all_vals if i['segment_code'] == 'S000'])
         res.append({k:v})
     resp = make_response(json_util.dumps(res))
     resp.headers['Content-Type'] = 'application/json'
