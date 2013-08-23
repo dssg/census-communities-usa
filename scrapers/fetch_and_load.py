@@ -12,7 +12,7 @@ MONGO_HOST = os.environ.get('MONGO_HOST')
 if not MONGO_HOST:
     MONGO_HOST = 'localhost'
 WRITE_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
-WRITE_DB = WRITE_CONN['census']
+WRITE_DB = WRITE_CONN['chi_metro']
 
 SEGMENTS = {
     'od': ['main', 'aux'],
@@ -162,9 +162,28 @@ def load(full_path):
                             row['work_census_bgrp_code'] =  work_geo[:-2]
                             row['work_census_tract_code'] = work_geo[:-3]
                             row['work_county_code'] =       work_geo[:5]
+                        counties = [
+                            '17031', 
+                            '17111', 
+                            '17037',
+                            '17063',
+                            '17093',
+                            '17197',
+                            '18127',
+                            '17097', 
+                            '17043', 
+                            '18111', 
+                            '17089', 
+                            '18073', 
+                            '18089', 
+                            '55059'
+                        ]
+                        if not row['home_county_code'] in counties or not row['work_county_code'] not in counties:
+                            continue
                         rows.append(row)
-                coll.insert(rows)
-        return 'Successfully loaded %s' % u
+                if rows:
+                    coll.insert(rows)
+        return 'Successfully loaded %s' % os.path.basename(full_path)
 
 if __name__ == "__main__":
     import argparse
