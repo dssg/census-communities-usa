@@ -2,7 +2,6 @@ import requests
 from requests.exceptions import ConnectionError
 import os
 import pymongo
-from pymongo.read_preferences import ReadPreference
 import gzip
 import unicodecsv as csv
 from datetime import datetime
@@ -14,9 +13,6 @@ if not MONGO_HOST:
     MONGO_HOST = 'localhost'
 WRITE_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
 WRITE_DB = WRITE_CONN['census']
-
-READ_DB = pymongo.MongoReplicaSetClient('%s:27017' % MONGO_HOST, replicaSet='rs0').census
-READ_DB.read_preference = ReadPreference.SECONDARY_PREFERRED
 
 SEGMENTS = {
     'od': ['main', 'aux'],
@@ -89,7 +85,7 @@ def make_indexes(group, coll, row):
             if field.startswith('home') or field.startswith('work') and 'code' in field:
                 coll.ensure_index([(field, pymongo.DESCENDING)])
 
-def fetch_load(year, state, **kwargs):
+def iter_parts(year, state, **kwargs):
     groups = kwargs.get('groups')
     if 'all' in groups:
         groups = ['od', 'rac', 'wac']
@@ -98,79 +94,77 @@ def fetch_load(year, state, **kwargs):
         job_types = JOB_TYPES.keys()
     for group in groups:
         coll = WRITE_DB[COLLS[group]]
+        save_path = os.path.join(os.environ['HOME'], 'data', state, group)
+        try:
+            os.makedirs(save_path)
+        except os.error:
+            pass
         segments = kwargs.get('segments')
         if 'all' in segments:
             segments = SEGMENTS[group]
         for segment in segments:
             for job_type in job_types:
                 state = state.lower()
-                u = '%s/%s/%s/%s_%s_%s_%s_%s.csv.gz' % (ENDPOINT, state, group, state, group, segment, job_type, year)
-                try:
-                    req = requests.get(u)
-                except ConnectionError:
-                    return 'Was unable to load %s' % u
-                if req.status_code != 200:
-                    print 'No %s data for segment %s in %s in the year %s of type %s' % (group, segment, state, year, job_type)
-                    continue
-                s = StringIO(req.content)
-                with gzip.GzipFile(fileobj=s) as f:
-                    row_groups = grouper(csv.DictReader(f), 20000)
-                    for gr in row_groups:
-                        rows = []
-                        for row in gr:
-                            if row:
-                                row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
-                                if group !='od':
-                                    row['segment_code'] = segment
-                                    row['segment_name'] = AREA_SEGMENTS[segment]
-                                row['main_state'] = state.upper()
-                                row['data_year'] = year
-                                row['job_type'] = JOB_TYPES[job_type]
-                                if row.get('h_geocode'):
-                                    home_geo_xwalk = READ_DB['geo_xwalk'].find_one({'tabblk2010': row['h_geocode']})
-                                    row['home_state_abrv'] = home_geo_xwalk['stusps']
-                                    row['home_state_name'] = home_geo_xwalk['stname']
-                                    row['home_county_fips'] = home_geo_xwalk['cty']
-                                    row['home_county_name'] = home_geo_xwalk['ctyname']
-                                    row['home_census_tract_code'] = home_geo_xwalk['trct']
-                                    row['home_census_tract_name'] = home_geo_xwalk['trctname']
-                                    row['home_census_block_code'] = home_geo_xwalk['bgrp']
-                                    row['home_census_block_name'] = home_geo_xwalk['bgrpname']
-                                    row['home_zcta_code'] = home_geo_xwalk['zcta']
-                                    row['home_zcta_name'] = home_geo_xwalk['zctaname']
-                                    row['home_place_code'] = home_geo_xwalk['stplc']
-                                    row['home_place_name'] = home_geo_xwalk['stplcname']
-                                    row['home_cong_dist_code'] = home_geo_xwalk['stcd113']
-                                    row['home_cong_dist_name'] = home_geo_xwalk['stcd113name']
-                                    row['home_st_leg_lower_code'] = home_geo_xwalk['stsldl']
-                                    row['home_st_leg_lower_name'] = home_geo_xwalk['stsldlname']
-                                    row['home_st_leg_upper_code'] = home_geo_xwalk['stsldu']
-                                    row['home_st_leg_upper_name'] = home_geo_xwalk['stslduname']
-                                if row.get('w_geocode'):
-                                    work_geo_xwalk = READ_DB['geo_xwalk'].find_one({'tabblk2010': row['w_geocode']})
-                                    row['work_state_abrv'] = work_geo_xwalk['stusps']
-                                    row['work_state_name'] = work_geo_xwalk['stname']
-                                    row['work_county_fips'] = work_geo_xwalk['cty']
-                                    row['work_county_name'] = work_geo_xwalk['ctyname']
-                                    row['work_census_tract_code'] = work_geo_xwalk['trct']
-                                    row['work_census_tract_name'] = work_geo_xwalk['trctname']
-                                    row['work_census_block_code'] = work_geo_xwalk['bgrp']
-                                    row['work_census_block_name'] = work_geo_xwalk['bgrpname']
-                                    row['work_zcta_code'] = work_geo_xwalk['zcta']
-                                    row['work_zcta_name'] = work_geo_xwalk['zctaname']
-                                    row['work_place_code'] = work_geo_xwalk['stplc']
-                                    row['work_place_name'] = work_geo_xwalk['stplcname']
-                                    row['work_cong_dist_code'] = work_geo_xwalk['stcd113']
-                                    row['work_cong_dist_name'] = work_geo_xwalk['stcd113name']
-                                    row['work_st_leg_lower_code'] = work_geo_xwalk['stsldl']
-                                    row['work_st_leg_lower_name'] = work_geo_xwalk['stsldlname']
-                                    row['work_st_leg_upper_code'] = work_geo_xwalk['stsldu']
-                                    row['work_st_leg_upper_name'] = work_geo_xwalk['stslduname']
-                                rows.append(row)
-                        # if row:
-                        #     make_indexes(group, coll, row)
-                        coll.insert(rows, w=0)
-                print 'Successfully loaded %s' % u
+                fname = '%s_%s_%s_%s_%s.csv.gz' % (state, group, segment, job_type, year)
+                full_path = os.path.join(save_path, fname)
+                url = '%s/%s/%s/%s' % (ENDPOINT, state, group, fname)
+                yield full_path, url
+
+def fetch(full_path, url):
+    if os.path.exists(full_path):
+        return 'Already fetched file: %s' % os.path.basename(full_path)
+    else:
+        try:
+            req = requests.get(url)
+        except ConnectionError:
+            return 'Was unable to load %s' % url
+        if req.status_code != 200:
+            return 'Got a %s when trying to fetch %s' % (req.status_code, url)
+        f = open(full_path, 'wb')
+        f.write(req.content)
+        f.close()
+        return 'Saved %s' % os.path.basename(full_path)
+
+def load(full_path):
+    if not os.path.exists(full_path):
+        return 'Have not yet downloaded file: %s' % os.path.basename(full_path)
+    else:
+        state, group, segment, job_type, year = os.path.basename(full_path)[:-7].split('_')
+        coll = WRITE_DB[COLLS[group]]
+        with gzip.GzipFile(full_path) as f:
+            row_groups = grouper(csv.DictReader(f), 20000)
+            for gr in row_groups:
+                rows = []
+                for row in gr:
+                    if row:
+                        row['createdate'] = datetime.strptime(row['createdate'], '%Y%m%d')
+                        if group !='od':
+                            row['segment_code'] = segment
+                            row['segment_name'] = AREA_SEGMENTS[segment]
+                        row['main_state'] = state.upper()
+                        for key in row.keys():
+                            if 'geocode' not in key:
+                                try:
+                                    row[key] = int(row[key])
+                                except ValueError:
+                                    pass
+                                except TypeError:
+                                    pass
+                        row['data_year'] = year
+                        row['job_type'] = JOB_TYPES[job_type]
+                        if group in ['od', 'rac']:
+                            home_geo = row['h_geocode']
+                            row['home_census_bgrp_code'] =  home_geo[:-2]
+                            row['home_census_tract_code'] = home_geo[:-3]
+                            row['home_county_code'] =       home_geo[:5]
+                        if group in ['od', 'wac']:
+                            work_geo = row['w_geocode']
+                            row['work_census_bgrp_code'] =  work_geo[:-2]
+                            row['work_census_tract_code'] = work_geo[:-3]
+                            row['work_county_code'] =       work_geo[:5]
+                        rows.append(row)
+                coll.insert(rows)
+        return 'Successfully loaded %s' % u
 
 if __name__ == "__main__":
     import argparse
@@ -206,6 +200,14 @@ if __name__ == "__main__":
         help="""
             Skips importing the geographic crosswalk info.
         """)
+    parser.add_argument('--fetch', action='store_true',
+        help="""
+            Fetch selected files from Census Bureau.
+        """)
+    parser.add_argument('--load', action='store_true',
+        help="""
+            Load selected files from Census Bureau.
+        """)
     args = parser.parse_args()
     states_file = open('50state.txt', 'rb')
     states_list = [s[:2] for s in states_file]
@@ -230,5 +232,8 @@ if __name__ == "__main__":
         else:
             print 'Skipping geographic crosswalk table for %s' % state.upper()
         for year in years:
-            print 'Loading data from %s for %s' % (year, state.upper())
-            fetch_load(year, state.lower(), **kwargs)
+            for full_path, url in iter_parts(year, state, **kwargs):
+                if args.fetch:
+                    print fetch(full_path, url)
+                if args.load:
+                    print load(full_path)

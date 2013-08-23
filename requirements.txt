@@ -4,3 +4,4 @@ pymongo==2.5.2
 Werkzeug==0.9.1
 gunicorn==17.5
 unicodecsv==0.9.4
+celery==3.0.12
