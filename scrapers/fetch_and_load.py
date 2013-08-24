@@ -178,9 +178,10 @@ def load(full_path):
                             '18089', 
                             '55059'
                         ]
-                        if not row['home_county_code'] in counties or not row['work_county_code'] not in counties:
-                            continue
-                        rows.append(row)
+                        home_county = row.get('home_county_code')
+                        work_county = row.get('work_county_code')
+                        if home_county in counties or work_county in counties:
+                            rows.append(row)
                 if rows:
                     coll.insert(rows)
         return 'Successfully loaded %s' % os.path.basename(full_path)
