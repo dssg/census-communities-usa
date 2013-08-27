@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 MONGO_HOST = os.environ.get('MONGO_HOST')
 MONGO_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
-MONGO_DB = MONGO_CONN['census']
+MONGO_DB = MONGO_CONN['chi_metro']
 MONGO_DB.read_preference = ReadPreference.SECONDARY_PREFERRED
 
 MONGO_COLLS = {
@@ -71,19 +71,24 @@ def query(coll_name, geo_area, value):
 
 @app.route('/tract-average/<tract_code>/')
 def tract_average(tract_code):
-    coll = MONGO_DB['residence_area']
+    coll = MONGO_DB['origin_destination']
+    # query = {'home_census_tract_code': { '$regex': '/%s.*' % tract_code}}
     query = {'home_census_tract_code': tract_code}
     results = [d for d in coll.find(query)]
     results = sorted(results, key=itemgetter('data_year'))
     res = []
+    keys = request.args.get('keys')
     for k, g in groupby(results, key=itemgetter('data_year')):
         v = {tract_code: {}}
         all_vals = list(g)
-        # Get Earnings summary for all job types (primary, etc) by year
-        v[tract_code]['SE01'] = sum([int(i['CE01']) for i in all_vals if i['segment_code'] == 'S000'])
-        v[tract_code]['SE02'] = sum([int(i['CE02']) for i in all_vals if i['segment_code'] == 'S000'])
-        v[tract_code]['SE03'] = sum([int(i['CE03']) for i in all_vals if i['segment_code'] == 'S000'])
-        v[tract_code]['S000'] = sum([int(i['C000']) for i in all_vals if i['segment_code'] == 'S000'])
+        v[tract_code]['S000'] = sum([i['S000'] for i in all_vals])
+        if keys:
+            keys = keys.split(',')
+            for key in keys:
+                try:
+                    v[tract_code][key] = sum([i[key] for i in all_vals])
+                except KeyError:
+                    return make_response('"%s" is not a valid field name' % key, 401)
         res.append({k:v})
     resp = make_response(json_util.dumps(res))
     resp.headers['Content-Type'] = 'application/json'

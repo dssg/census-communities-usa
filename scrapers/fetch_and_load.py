@@ -16,8 +16,8 @@ WRITE_DB = WRITE_CONN['chi_metro']
 
 SEGMENTS = {
     'od': ['main', 'aux'],
-    'wac': ['S000', 'SA01', 'SA02', 'SA03', 'SE01', 'SE02', 'SE03', 'SI01', 'SI02', 'SI03'],
-    'rac': ['S000', 'SA01', 'SA02', 'SA03', 'SE01', 'SE02', 'SE03', 'SI01', 'SI02', 'SI03'],
+    'wac': ['SA01', 'SA02', 'SA03', 'SE01', 'SE02', 'SE03', 'SI01', 'SI02', 'SI03'],
+    'rac': ['SA01', 'SA02', 'SA03', 'SE01', 'SE02', 'SE03', 'SI01', 'SI02', 'SI03'],
 }
 
 COLLS = {
@@ -27,7 +27,6 @@ COLLS = {
 }
 
 JOB_TYPES = {
-    'JT00': 'all',
     'JT01': 'primary',
     'JT02': 'private',
     'JT03': 'private primary',
@@ -155,12 +154,12 @@ def load(full_path):
                         if group in ['od', 'rac']:
                             home_geo = row['h_geocode']
                             row['home_census_bgrp_code'] =  home_geo[:-2]
-                            row['home_census_tract_code'] = home_geo[:-3]
+                            row['home_census_tract_code'] = home_geo[:-4]
                             row['home_county_code'] =       home_geo[:5]
                         if group in ['od', 'wac']:
                             work_geo = row['w_geocode']
                             row['work_census_bgrp_code'] =  work_geo[:-2]
-                            row['work_census_tract_code'] = work_geo[:-3]
+                            row['work_census_tract_code'] = work_geo[:-4]
                             row['work_county_code'] =       work_geo[:5]
                         counties = [
                             '17031', 
