@@ -69,6 +69,22 @@ def query(coll_name, geo_area, value):
     resp.headers['Content-Type'] = 'application/json'
     return resp
 
+@app.route('/tract-origin-destination/<tract_code>/')
+def tract_origin_destination(tract_code):
+    coll = MONGO_DB['origin_destination']
+    home = [d for d in coll.find({'home_census_tract_code': tract_code})]
+    work = [d for d in coll.find({'work_census_tract_code': tract_code})]
+    home_sorted = sorted(home, key=itemgetter('work_census_tract_code'))
+    work_sorted = sorted(work, key=itemgetter('home_census_tract_code'))
+    results = {tract_code: {'traveling-from': {}, 'traveling-to': {}}}
+    for k,g in groupby(home_sorted, key=itemgetter('work_census_tract_code')):
+        results[tract_code]['traveling-to'][k] = len(list(g))
+    for k,g in groupby(work_sorted, key=itemgetter('home_census_tract_code')):
+        results[tract_code]['traveling-from'][k] = len(list(g))
+    resp = make_response(json.dumps(results))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
 @app.route('/tract-average/<tract_code>/')
 def tract_average(tract_code):
     coll = MONGO_DB['origin_destination']
@@ -77,18 +93,18 @@ def tract_average(tract_code):
     results = [d for d in coll.find(query)]
     results = sorted(results, key=itemgetter('data_year'))
     res = []
-    keys = request.args.get('keys')
+    keys = request.args.get('keys',[])
+    if keys:
+        keys = keys.split(',')
     for k, g in groupby(results, key=itemgetter('data_year')):
         v = {tract_code: {}}
         all_vals = list(g)
         v[tract_code]['S000'] = sum([i['S000'] for i in all_vals])
-        if keys:
-            keys = keys.split(',')
-            for key in keys:
-                try:
-                    v[tract_code][key] = sum([i[key] for i in all_vals])
-                except KeyError:
-                    return make_response('"%s" is not a valid field name' % key, 401)
+        for key in keys:
+            try:
+                v[tract_code][key] = sum([i[key] for i in all_vals])
+            except KeyError:
+                return make_response('"%s" is not a valid field name' % key, 401)
         res.append({k:v})
     resp = make_response(json_util.dumps(res))
     resp.headers['Content-Type'] = 'application/json'
