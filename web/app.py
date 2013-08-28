@@ -82,7 +82,7 @@ def tract_origin_destination(tract_code):
         if tract_count >= 20:
             results[tract_code]['traveling-to'][k] = tract_count
     for k,g in groupby(work_sorted, key=itemgetter('home_census_tract_code')):
-        tract_code = len(list(g))
+        tract_count = len(list(g))
         if tract_count >= 20:
             results[tract_code]['traveling-from'][k] = tract_count
     resp = make_response(json.dumps(results))
