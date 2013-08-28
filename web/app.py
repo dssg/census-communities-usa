@@ -78,9 +78,13 @@ def tract_origin_destination(tract_code):
     work_sorted = sorted(work, key=itemgetter('home_census_tract_code'))
     results = {tract_code: {'traveling-from': {}, 'traveling-to': {}}}
     for k,g in groupby(home_sorted, key=itemgetter('work_census_tract_code')):
-        results[tract_code]['traveling-to'][k] = len(list(g))
+        tract_count = len(list(g))
+        if tract_count >= 20:
+            results[tract_code]['traveling-to'][k] = tract_count
     for k,g in groupby(work_sorted, key=itemgetter('home_census_tract_code')):
-        results[tract_code]['traveling-from'][k] = len(list(g))
+        tract_code = len(list(g))
+        if tract_count >= 20:
+            results[tract_code]['traveling-from'][k] = tract_count
     resp = make_response(json.dumps(results))
     resp.headers['Content-Type'] = 'application/json'
     return resp
