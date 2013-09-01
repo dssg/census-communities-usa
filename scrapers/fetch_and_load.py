@@ -8,7 +8,7 @@ from datetime import datetime
 from cStringIO import StringIO
 from itertools import izip_longest
 ENDPOINT = 'http://lehd.ces.census.gov/onthemap/LODES7'
-MONGO_HOST = os.environ.get('MONGO_HOST')
+MONGO_HOST = os.environ.get('DB_HOST')
 if not MONGO_HOST:
     MONGO_HOST = 'localhost'
 WRITE_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
