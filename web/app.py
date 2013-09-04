@@ -3,47 +3,61 @@ import flask
 import os
 import json
 import sys
-import pymongo
-from pymongo.read_preferences import ReadPreference
+import psycopg2
 from urlparse import urlparse
-from bson import Binary, Code
-from bson import json_util
 from operator import itemgetter
 from itertools import groupby
 
 app = Flask(__name__)
 
-MONGO_HOST = os.environ.get('MONGO_HOST')
-MONGO_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
-MONGO_DB = MONGO_CONN['chi_metro']
-MONGO_DB.read_preference = ReadPreference.SECONDARY_PREFERRED
+DB_HOST = os.environ.get('DB_HOST')
+conn = psycopg2.connect('host=%s dbname=census user=census' % DB_HOST)
 
-MONGO_COLLS = {
-    'od': 'origin_destination',
-    'rac': 'residence_area',
-    'wac': 'work_area',
-}
+from datetime import timedelta
+from flask import make_response, request, current_app
+from functools import update_wrapper
 
-AREAS = [
-    'st_leg_upper_name',
-    'st_leg_lower_name',
-    'place_code',
-    'county_fips',
-    'census_tract_code',
-    'st_leg_upper_code',
-    'place_name',
-    'zcta_name',
-    'state_name',
-    'zcta_code',
-    'cong_dist_name',
-    'county_name',
-    'state_abrv',
-    'census_tract_name',
-    'st_leg_lower_code',
-    'census_block_code',
-    'census_block_name',
-    'cong_dist_code',
-]
+
+def crossdomain(origin=None, methods=None, headers=None,
+                max_age=21600, attach_to_all=True,
+                automatic_options=True):
+    if methods is not None:
+        methods = ', '.join(sorted(x.upper() for x in methods))
+    if headers is not None and not isinstance(headers, basestring):
+        headers = ', '.join(x.upper() for x in headers)
+    if not isinstance(origin, basestring):
+        origin = ', '.join(origin)
+    if isinstance(max_age, timedelta):
+        max_age = max_age.total_seconds()
+
+    def get_methods():
+        if methods is not None:
+            return methods
+
+        options_resp = current_app.make_default_options_response()
+        return options_resp.headers['allow']
+
+    def decorator(f):
+        def wrapped_function(*args, **kwargs):
+            if automatic_options and request.method == 'OPTIONS':
+                resp = current_app.make_default_options_response()
+            else:
+                resp = make_response(f(*args, **kwargs))
+            if not attach_to_all and request.method != 'OPTIONS':
+                return resp
+
+            h = resp.headers
+
+            h['Access-Control-Allow-Origin'] = origin
+            h['Access-Control-Allow-Methods'] = get_methods()
+            h['Access-Control-Max-Age'] = str(max_age)
+            if headers is not None:
+                h['Access-Control-Allow-Headers'] = headers
+            return resp
+
+        f.provide_automatic_options = False
+        return update_wrapper(wrapped_function, f)
+    return decorator
 
 @app.route("/<coll_name>/<geo_area>/<value>/")
 def query(coll_name, geo_area, value):
@@ -70,47 +84,42 @@ def query(coll_name, geo_area, value):
     return resp
 
 @app.route('/tract-origin-destination/<tract_code>/')
+@crossdomain(origin="*")
 def tract_origin_destination(tract_code):
-    coll = MONGO_DB['origin_destination']
-    home = [d for d in coll.find({'home_census_tract_code': tract_code})]
-    work = [d for d in coll.find({'work_census_tract_code': tract_code})]
-    home_sorted = sorted(home, key=itemgetter('work_census_tract_code'))
-    work_sorted = sorted(work, key=itemgetter('home_census_tract_code'))
-    results = {tract_code: {'traveling-from': {}, 'traveling-to': {}}}
-    for k,g in groupby(home_sorted, key=itemgetter('work_census_tract_code')):
-        tract_count = len(list(g))
-        if tract_count >= 20:
-            results[tract_code]['traveling-to'][k] = tract_count
-    for k,g in groupby(work_sorted, key=itemgetter('home_census_tract_code')):
-        tract_count = len(list(g))
-        if tract_count >= 20:
-            results[tract_code]['traveling-from'][k] = tract_count
+    cursor = conn.cursor()
+    dest_query = """select 
+        substring(w_geocode from 1 for 11) as work, 
+        sum(s000) as total_jobs from origin_destination 
+        where h_geocode like %(like)s group by work order by total_jobs desc;"""
+    cursor.execute(dest_query, {'like': tract_code + '%'})
+    dest_results = cursor.fetchall()
+    origin_query = """select 
+        substring(h_geocode from 1 for 11) as home, 
+        sum(s000) as total_jobs from origin_destination 
+        where w_geocode like %(like)s group by home order by total_jobs desc;"""
+    cursor.execute(origin_query, {'like': tract_code + '%'})
+    origin_results = cursor.fetchall()
+    results = {'traveling-to': [{d[0]: d[1]} for d in dest_results if d[1] >= 20]}
+    results['traveling-from'] = [{o[0]: o[1]} for o in origin_results if o[1] >= 20]
     resp = make_response(json.dumps(results))
     resp.headers['Content-Type'] = 'application/json'
     return resp
 
 @app.route('/tract-average/<tract_code>/')
 def tract_average(tract_code):
-    coll = MONGO_DB['origin_destination']
-    # query = {'home_census_tract_code': { '$regex': '/%s.*' % tract_code}}
-    query = {'home_census_tract_code': tract_code}
-    results = [d for d in coll.find(query)]
-    results = sorted(results, key=itemgetter('data_year'))
-    res = []
-    keys = request.args.get('keys',[])
-    if keys:
-        keys = keys.split(',')
-    for k, g in groupby(results, key=itemgetter('data_year')):
-        v = {tract_code: {}}
-        all_vals = list(g)
-        v[tract_code]['S000'] = sum([i['S000'] for i in all_vals])
-        for key in keys:
-            try:
-                v[tract_code][key] = sum([i[key] for i in all_vals])
-            except KeyError:
-                return make_response('"%s" is not a valid field name' % key, 401)
-        res.append({k:v})
-    resp = make_response(json_util.dumps(res))
+    cursor = conn.cursor()
+    query = """SELECT 
+        data_year, sum(earnings_1250_under), sum(earnings_1251_3333), sum(earnings_3333_over) 
+        from area_detail where geocode like %(like)s and area_type='residence_area' group by data_year order by data_year;"""
+    cursor.execute(query, {'like': tract_code + '%'})
+    results = cursor.fetchall()
+    out = {}
+    for result in results:
+        out[result[0]] = {}
+        for k,v in zip(['earnings_1250_under', 'earnings_1251_3333', 'earnings_3333_over'], result[1:]):
+            out[result[0]][k] = v
+            out[result[0]]['total_jobs'] = sum(result)
+    resp = make_response(json.dumps(out))
     resp.headers['Content-Type'] = 'application/json'
     return resp
 

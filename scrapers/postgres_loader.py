@@ -86,7 +86,7 @@ AREAS = {
 }
 
 def pick_table(uh, dirname, names):
-    conn = psycopg2.connect('host=localhost port=9999 dbname=census user=census')
+    conn = psycopg2.connect('host=%s dbname=census user=census' % DB_HOST)
     cursor = conn.cursor()
     try:
         cursor.execute(OD_CREATE)
@@ -98,13 +98,17 @@ def pick_table(uh, dirname, names):
         conn.commit()
     except psycopg2.ProgrammingError, e:
         conn.rollback()
+    loaded = [l[:-1] for l in open('loaded.txt', 'rb')]
     for name in names:
         fpath = os.path.join(dirname, name)
-        if os.path.isfile(fpath):
-            if '_od_' in fpath:
-                load_od(conn, cursor, fpath)
-            else:
-                load_area(conn, cursor, fpath)
+        if fpath in loaded:
+            print 'Skipping %s ' % fpath
+        else:
+            if os.path.isfile(fpath):
+                if '_od_' in fpath:
+                    load_od(conn, cursor, fpath)
+                else:
+                    load_area(conn, cursor, fpath)
 
 def load_od(conn, cursor, fpath):
     fname = os.path.basename(fpath)
@@ -118,9 +122,12 @@ def load_od(conn, cursor, fpath):
             out.write('\t'.join(row))
             out.write('\n')
     out.seek(0)
-    cursor.copy_from(out, 'origin_destination')
-    conn.commit()
-    print 'Loaded %s' % fpath
+    try:
+        cursor.copy_from(out, 'origin_destination')
+        conn.commit()
+        print 'Loaded %s' % fpath
+    except psycopg2.IntegrityError, e:
+        print 'Looks like %s was already loaded: %s' % (fpath, e)
     return None
 
 def load_area(conn, cursor, fpath):
@@ -135,9 +142,12 @@ def load_area(conn, cursor, fpath):
             out.write('\t'.join(row))
             out.write('\n')
     out.seek(0)
-    cursor.copy_from(out, 'area_detail')
-    conn.commit()
-    print 'Loaded %s' % fpath
+    try:
+        cursor.copy_from(out, 'area_detail')
+        conn.commit()
+        print 'Loaded %s' % fpath
+    except psycopg2.IntegrityError, e:
+        print 'Looks like %s was already loaded: %s' % (fpath, e)
     return None
 
 if __name__ == '__main__':
