@@ -90,13 +90,13 @@ def tract_origin_destination(tract_code):
     dest_query = """select 
         substring(w_geocode from 1 for 11) as work, 
         sum(s000) as total_jobs from origin_destination 
-        where h_geocode like %(like)s group by work order by total_jobs desc;"""
+        where h_geocode like %(like)s group by work order by total_jobs desc limit 20;"""
     cursor.execute(dest_query, {'like': tract_code + '%'})
     dest_results = cursor.fetchall()
     origin_query = """select 
         substring(h_geocode from 1 for 11) as home, 
         sum(s000) as total_jobs from origin_destination 
-        where w_geocode like %(like)s group by home order by total_jobs desc;"""
+        where w_geocode like %(like)s group by home order by total_jobs desc limit 20;"""
     cursor.execute(origin_query, {'like': tract_code + '%'})
     origin_results = cursor.fetchall()
     results = {'traveling-to': [{d[0]: d[1]} for d in dest_results if d[1] >= 20]}
@@ -110,7 +110,7 @@ def tract_average(tract_code):
     cursor = conn.cursor()
     query = """SELECT 
         data_year, sum(earnings_1250_under), sum(earnings_1251_3333), sum(earnings_3333_over) 
-        from area_detail where geocode like %(like)s and area_type='residence_area' group by data_year order by data_year;"""
+        from area_detail where geocode like %(like)s and area_type='work_area' group by data_year order by data_year;"""
     cursor.execute(query, {'like': tract_code + '%'})
     results = cursor.fetchall()
     out = {}

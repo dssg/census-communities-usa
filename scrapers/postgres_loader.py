@@ -6,6 +6,69 @@ import csv
 
 DB_HOST = os.environ.get('DB_HOST')
 
+WORK_AREA_CREATE = """
+    CREATE TABLE work_area_detail (
+        geocode VARCHAR(15) NOT NULL,
+        age_29_under INTEGER,
+        age_30_54 INTEGER,
+        age_55_over INTEGER,
+        earnings_1250_under INTEGER,
+        earnings_1251_3333 INTEGER,
+        earnings_3333_over INTEGER,
+        cns01 INTEGER,
+        cns02 INTEGER,
+        cns03 INTEGER,
+        cns04 INTEGER,
+        cns05 INTEGER,
+        cns06 INTEGER,
+        cns07 INTEGER,
+        cns08 INTEGER,
+        cns09 INTEGER,
+        cns10 INTEGER,
+        cns11 INTEGER,
+        cns12 INTEGER,
+        cns13 INTEGER,
+        cns14 INTEGER,
+        cns15 INTEGER,
+        cns16 INTEGER,
+        cns17 INTEGER,
+        cns18 INTEGER,
+        cr19 INTEGER,
+        cr20 INTEGER,
+        cr01 INTEGER,
+        cr02 INTEGER,
+        cr03 INTEGER,
+        cr04 INTEGER,
+        cr05 INTEGER,
+        cr06 INTEGER,
+        cr07 INTEGER,
+        ct01 INTEGER,
+        ct02 INTEGER,
+        cd01 INTEGER,
+        cd02 INTEGER,
+        cd03 INTEGER,
+        cd04 INTEGER,
+        cs01 INTEGER,
+        cs02 INTEGER,
+        cfa01 INTEGER,
+        cfa02 INTEGER,
+        cfa03 INTEGER,
+        cfa04 INTEGER,
+        cfa05 INTEGER,
+        cfs01 INTEGER,
+        cfs02 INTEGER,
+        cfs03 INTEGER,
+        cfs04 INTEGER,
+        cfs05 INTEGER,
+        createdate DATE,
+        area_type VARCHAR,
+        data_year INTEGER,
+        job_type VARCHAR,
+        segment VARCHAR,
+        PRIMARY KEY (geocode, area_type, data_year, job_type, segment)
+    )
+"""
+
 AREA_CREATE = """
     CREATE TABLE area_detail (
         geocode VARCHAR(15) NOT NULL,
@@ -98,6 +161,11 @@ def pick_table(uh, dirname, names):
         conn.commit()
     except psycopg2.ProgrammingError, e:
         conn.rollback()
+    try:
+        cursor.execute(WORK_AREA_CREATE)
+        conn.commit()
+    except psycopg2.ProgrammingError, e:
+        conn.rollback()
     loaded = [l[:-1] for l in open('loaded.txt', 'rb')]
     for name in names:
         fpath = os.path.join(dirname, name)
@@ -128,6 +196,7 @@ def load_od(conn, cursor, fpath):
         print 'Loaded %s' % fpath
     except psycopg2.IntegrityError, e:
         print 'Looks like %s was already loaded: %s' % (fpath, e)
+        conn.rollback()
     return None
 
 def load_area(conn, cursor, fpath):
@@ -136,18 +205,22 @@ def load_area(conn, cursor, fpath):
     out = StringIO()
     with gzip.GzipFile(fpath) as f:
         reader = csv.reader(f)
-        reader.next()
+        headers = reader.next()
         for row in reader:
             row.extend([AREAS[area_type], data_year, job_type, segment])
             out.write('\t'.join(row))
             out.write('\n')
     out.seek(0)
     try:
-        cursor.copy_from(out, 'area_detail')
+        if area_type == 'wac':
+            cursor.copy_from(out, 'work_area_detail')
+        else:
+            cursor.copy_from(out, 'area_detail')
         conn.commit()
         print 'Loaded %s' % fpath
     except psycopg2.IntegrityError, e:
         print 'Looks like %s was already loaded: %s' % (fpath, e)
+        conn.rollback()
     return None
 
 if __name__ == '__main__':
