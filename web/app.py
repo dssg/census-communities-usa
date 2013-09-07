@@ -110,7 +110,7 @@ def tract_average(tract_code):
     cursor = conn.cursor()
     query = """SELECT 
         data_year, sum(earnings_1250_under), sum(earnings_1251_3333), sum(earnings_3333_over) 
-        from area_detail where geocode like %(like)s and area_type='work_area' group by data_year order by data_year;"""
+        from work_area_detail where geocode like %(like)s group by data_year order by data_year;"""
     cursor.execute(query, {'like': tract_code + '%'})
     results = cursor.fetchall()
     out = {}
@@ -118,7 +118,7 @@ def tract_average(tract_code):
         out[result[0]] = {}
         for k,v in zip(['earnings_1250_under', 'earnings_1251_3333', 'earnings_3333_over'], result[1:]):
             out[result[0]][k] = v
-            out[result[0]]['total_jobs'] = sum(result)
+            out[result[0]]['total_jobs'] = sum(result[1:])
     resp = make_response(json.dumps(out))
     resp.headers['Content-Type'] = 'application/json'
     return resp
