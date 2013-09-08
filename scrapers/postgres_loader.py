@@ -148,7 +148,7 @@ AREAS = {
     'wac': 'work_area',
 }
 
-def pick_table(uh, dirname, names):
+def pick_table(params, dirname, names):
     conn = psycopg2.connect('host=%s dbname=census user=census' % DB_HOST)
     cursor = conn.cursor()
     try:
@@ -166,17 +166,16 @@ def pick_table(uh, dirname, names):
         conn.commit()
     except psycopg2.ProgrammingError, e:
         conn.rollback()
-    loaded = [l[:-1] for l in open('loaded.txt', 'rb')]
-    for name in names:
-        fpath = os.path.join(dirname, name)
-        if fpath in loaded:
-            print 'Skipping %s ' % fpath
-        else:
+    if '%s/%s' % (params['state'], params['table']) in dirname:
+        for name in names:
+            fpath = os.path.join(dirname, name)
             if os.path.isfile(fpath):
                 if '_od_' in fpath:
                     load_od(conn, cursor, fpath)
                 else:
                     load_area(conn, cursor, fpath)
+    else:
+        return None
 
 def load_od(conn, cursor, fpath):
     fname = os.path.basename(fpath)
@@ -232,6 +231,20 @@ if __name__ == '__main__':
         help="""
             Relative path to directory where your gzipped csv files are located.
         """)
+    parser.add_argument('--state', required=True, type=str,
+        help="""
+            State to load.
+        """
+        )
+    parser.add_argument('--table', required=True, type=str,
+        help=""" 
+            Table to load
+        """
+        )
     args = parser.parse_args()
     base_dir = args.directory
-    os.path.walk(base_dir, pick_table, None)
+    params = {
+        'state': args.state,
+        'table': args.table,
+    }
+    os.path.walk(base_dir, pick_table, params)
