@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 DB_HOST = os.environ.get('DB_HOST')
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from flask import make_response, request, current_app
 from functools import update_wrapper
 
@@ -104,6 +104,7 @@ def tract_origin_destination(tract_code):
     results['traveling-from'] = [{o[0]: o[1]} for o in origin_results if o[1] >= 20]
     resp = make_response(json.dumps(results))
     resp.headers['Content-Type'] = 'application/json'
+    resp.headers['Cache-Control'] = 'public, max-age=31536000'
     return resp
 
 @app.route('/tract-average/<tract_code>/')
@@ -123,6 +124,7 @@ def tract_average(tract_code):
             out[result[0]]['total_jobs'] = sum(result[1:])
     resp = make_response(json.dumps(out))
     resp.headers['Content-Type'] = 'application/json'
+    resp.headers['Cache-Control'] = 'public, max-age=31536000'
     return resp
 
 if __name__ == "__main__":
