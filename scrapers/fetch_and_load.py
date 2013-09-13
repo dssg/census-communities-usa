@@ -11,8 +11,8 @@ ENDPOINT = 'http://lehd.ces.census.gov/onthemap/LODES7'
 MONGO_HOST = os.environ.get('DB_HOST')
 if not MONGO_HOST:
     MONGO_HOST = 'localhost'
-WRITE_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
-WRITE_DB = WRITE_CONN['chi_metro']
+# WRITE_CONN = pymongo.MongoReplicaSetClient(MONGO_HOST, replicaSet='rs0')
+# WRITE_DB = WRITE_CONN['chi_metro']
 
 SEGMENTS = {
     'od': ['main', 'aux'],

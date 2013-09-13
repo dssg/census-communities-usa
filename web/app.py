@@ -91,13 +91,13 @@ def tract_origin_destination(tract_code, year):
     dest_query = """select 
         substring(w_geocode from 1 for 11) as work, 
         sum(s000) as total_jobs from origin_destination 
-        where h_geocode like %(like)s and data_year = %(year)s group by work order by total_jobs desc limit 100;"""
+        where h_geocode like %(like)s and data_year = %(year)s group by work order by total_jobs desc;"""
     dest_cursor.execute(dest_query, {'like': tract_code + '%', 'year': int(year)})
     dest_results = dest_cursor.fetchall()
     origin_query = """select 
         substring(h_geocode from 1 for 11) as home, 
         sum(s000) as total_jobs from origin_destination 
-        where w_geocode like %(like)s and data_year = %(year)s group by home order by total_jobs desc limit 100;"""
+        where w_geocode like %(like)s and data_year = %(year)s group by home order by total_jobs desc;"""
     origin_cursor.execute(origin_query, {'like': tract_code + '%', 'year': int(year)})
     origin_results = origin_cursor.fetchall()
     results = {'traveling-to': [{d[0]: d[1]} for d in dest_results if d[1] >= 20]}
