@@ -247,15 +247,4 @@ if __name__ == '__main__':
         'state': args.state,
         'table': args.table,
     }
-    if (args.table == "all"):
-        params_od = params
-        params_rac = params
-        params_wac = params
-        params_od.table = "od"
-        params_rac.table =  "rac"
-        params_wac.table = "wac"
-        os.path.walk(base_dir, pick_table, params_od)
-        os.path.walk(base_dir, pick_table, params_rac)
-        os.path.walk(base_dir, pick_table, params_wac)
-    elif:
-        os.path.walk(base_dir, pick_table, params)
+    os.path.walk(base_dir, pick_table, params)
