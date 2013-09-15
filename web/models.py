@@ -27,3 +27,5 @@ class OriginDestination(db.Model):
  	createdate 	= Column(Date)    
  	data_year 	= Column(Integer, nullable=False) 
  	job_type  	= Column(String, nullable=False)
+
+print OriginDestination.query.limit(1).all()
