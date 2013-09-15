@@ -1,5 +1,8 @@
 venv
 
+
+#
+*sftp-config.json
 *~
 
 *.py[cod]
