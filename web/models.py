@@ -12,8 +12,8 @@ db = SQLAlchemy(app)
 
 class OriginDestination(db.Model):
 	__tablename__ = 'origin_destination'
-	h_geocode 	= db.Column(String,nullable=False)
-	w_geocode 	= db.Column(String,nullable=False)
+	h_geocode 	= db.Column(String(15),nullable=False)
+	w_geocode 	= db.Column(String(15),nullable=False)
  	s000      	= db.Column(Integer) 
  	sa01      	= db.Column(Integer) 
  	sa02      	= db.Column(Integer) 
@@ -26,6 +26,6 @@ class OriginDestination(db.Model):
  	si03	  	= db.Column(Integer)  
  	createdate 	= db.Column(Date)    
  	data_year 	= db.Column(Integer, nullable=False) 
- 	job_type  	= db.Column(String, nullable=False)
+ 	job_type  	= db.Column(String(255), nullable=False)
 
 print OriginDestination.query.limit(1).all()
