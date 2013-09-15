@@ -7,7 +7,7 @@ import datetime
 # the db host should be the url of 
 DB_HOST = os.environ.get('DB_HOST')
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://cenus@%s/census' % DB_HOST
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://census@%s/census' % DB_HOST
 db = SQLAlchemy(app)
 
 class OriginDestination(db.Model):
