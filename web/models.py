@@ -91,5 +91,5 @@ class WorkAreaDetail(db.Model):
 	## make a repr ## 
 
 # Tests
-OriginDestination.query.limit(1).all()
-WorkAreaDetail.query.limit(1).all()
+print OriginDestination.query.limit(1).all()
+print WorkAreaDetail.query.limit(1).all()
