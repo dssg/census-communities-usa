@@ -140,7 +140,4 @@ class ResidenceAreaDetail(db.Model):
 	segment              = db.Column(db.String(255),nullable=False,primary_key=True)
 
 
-# Tests
-print OriginDestination.query.limit(1).all()
-print WorkAreaDetail.query.limit(1).all()
-print ResidenceAreaDetail.query.limit(1).all()
+	
